@@ -1,0 +1,9 @@
+venv/
+.vscode/
+__pycache__/
+.git/
+.venv/
+data/annotations/
+data/train/
+process_data/
+weights/
