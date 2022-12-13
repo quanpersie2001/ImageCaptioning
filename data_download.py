@@ -11,7 +11,7 @@ print('>>> Downloading COCO dataset...')
 
 # Download caption annotation files
 print('>>> Downloading annotation files...')
-if not os.listdir(ROOT / 'data' / 'annotations'):
+if not (os.path.exists(ROOT / 'data' / 'annotations') and os.listdir(ROOT / 'data' / 'annotations')):
     annotation_zip = tf.keras.utils.get_file('captions.zip',
                                              cache_subdir=ROOT / 'data',
                                              origin='http://images.cocodataset.org/annotations/annotations_trainval2014.zip',
@@ -23,7 +23,7 @@ else:
 
 # Download image files
 print('>>> Downloading annotation files...')
-if not os.listdir(ROOT / 'data' / 'train'):
+if not (os.path.exists(ROOT / 'data' / 'train2014') and os.listdir(ROOT / 'data' / 'train2014')):
     image_zip = tf.keras.utils.get_file('train2014.zip',
                                         cache_subdir=ROOT / 'data',
                                         origin='http://images.cocodataset.org/zips/train2014.zip',

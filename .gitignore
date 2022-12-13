@@ -4,6 +4,6 @@ __pycache__/
 .git/
 .venv/
 data/annotations/
-data/train/
+data/train2014/
 process_data/
 weights/
