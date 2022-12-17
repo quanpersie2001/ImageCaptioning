@@ -9,6 +9,9 @@ from utils import add_end_start_tokens, clean_bad_text_data, create_vocab, extra
 inception = InceptionV3()
 inception_model = Model(inputs=inception.inputs, outputs=inception.layers[-2].output)
 
+if not os.path.exists('process_data'):
+    os.makedirs('process_data')
+
 print('>>> Cleaning and saving data...')
 image_captoin_mapping = get_train_image_captions_mapping()
 image_captoin_mapping_clean = clean_bad_text_data(image_captoin_mapping)
