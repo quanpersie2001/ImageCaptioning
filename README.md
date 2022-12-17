@@ -1,5 +1,10 @@
 # ImageCaptioning
 
+## Install lib
+```
+pip install -r requirements.txt
+```
+
 ## Download data
 ```console
 python data_download.py
