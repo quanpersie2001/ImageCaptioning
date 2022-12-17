@@ -4,7 +4,7 @@
 ```console
 python data_download.py
 ```
-
+> **Note** : Dataset is MS COCO 2014 and Glove <Wikipedia 2014 + Gigaword 5>. This is large dataset, long download.
 ## How to run?
 Fist you **must** run
 ```console
