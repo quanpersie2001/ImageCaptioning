@@ -144,16 +144,26 @@ def masked_loss_function(real, pred):
     return tf.reduce_mean(loss_)
 
 
-def extract_features(data, model, inpute_size = (299,299)):
+def extract_features(data, model, input_size = (299,299)):
     features = {}
     for name in tqdm(data):
-        image = load_img(name, target_size=inpute_size)
+        image = load_img(name, target_size=input_size)
         image = img_to_array(image)
         image = image.reshape((1, image.shape[0], image.shape[1], image.shape[2]))
         image = preprocess_input(image)
         feature = model.predict(image, verbose=0)
         features[name] = feature.reshape(2048)
     return features
+
+
+def _extract_feature(input, model, input_size = (299,299)):
+    image = load_img(input, target_size=input_size)
+    image = img_to_array(image)
+    image = image.reshape((1, image.shape[0], image.shape[1], image.shape[2]))
+    image = preprocess_input(image)
+    feature = model.predict(image, verbose=0)
+    feature = feature.reshape(2048)
+    return feature
 
 
 def get_max_length(captions, percentile):

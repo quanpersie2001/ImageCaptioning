@@ -97,7 +97,7 @@ def run(batch_size = 64, output = ROOT / 'weights', epochs = 100, save_history =
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch-size', type=int, default=64, help='batch size')
-    parser.add_argument('--output', nargs='+', type=str, default= ROOT / 'weights', help='weigths path(s)')
+    parser.add_argument('--output', type=str, default= ROOT / 'weights', help='weigths path(s)')
     parser.add_argument('--epochs', type=int, default=100, help='epochs')
     parser.add_argument("--save-history", action=argparse.BooleanOptionalAction)
     opt = parser.parse_args()

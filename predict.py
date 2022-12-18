@@ -15,7 +15,12 @@ from utils import k_beam_search
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]
 
-def predict(path, weight='weights/model_0.h5', k_beam=9, log=False):
+def predict(path, weight='weights/model.h5', k_beam=9, log=False):
+
+    if not Path(weight).exists():
+        print('Cannot find weight file, please run train.py or download pretrain model from https://drive.google.com/drive/u/2/folders/1q-COeg-nEMOnJIAfuJcKvcJl7sPQfLOn')
+        return
+
     model = keras.models.load_model(weight, compile=False)
 
     pic = load_img(path, target_size=(299,299))
@@ -39,18 +44,28 @@ def predict(path, weight='weights/model_0.h5', k_beam=9, log=False):
     fe = feature.reshape((1,2048))
 
     caption = k_beam_search(model, fe, word_to_id, id_to_word, max_length, k_beam, log)
-    x = plt.imread(path)
-    plt.imshow(x)
-    plt.title(f'k_beam = {k_beam} - Caption: {caption}')
-    plt.axis('off')
-    plt.show()
+
+    return caption
+
+
+def run(path, weight='weights/model_28.h5', k_beam=5, log=False):
+    caption = predict(path, weight, k_beam, log)
+    if caption:
+        img = plt.imread(path)
+        plt.imshow(img)
+
+        plt.suptitle(f'K-beam:{k_beam}', fontsize=14, fontweight=1, y=0.95, color='blue')
+        plt.title(f'{caption}', fontsize=12, fontweight=0, y=-0.1 )
+
+        plt.axis('off')
+        plt.show()
 
 
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--image', type=str, help='image path')
-    parser.add_argument('--weight', nargs='+', type=str, default= ROOT / 'weights' / 'model_2.h5', help='weigths path(s)')
-    parser.add_argument('--k-beam', type=int, default=9, help='beam size')
+    parser.add_argument('--weight', type=str, default= ROOT / 'weights' / 'model.h5', help='weigths path(s)')
+    parser.add_argument('--k-beam', type=int, default=5, help='beam size')
     parser.add_argument("--log", action=argparse.BooleanOptionalAction)
     opt = parser.parse_args()
     return opt
@@ -58,9 +73,8 @@ def parse_opt():
 
 def main():
     opt = parse_opt()
-    predict(opt.image, opt.weight, opt.k_beam, opt.log)
+    run(opt.image, opt.weight, opt.k_beam, opt.log)
 
 
 if __name__ == '__main__':
     main()
-    

@@ -2,3 +2,5 @@ keras==2.9.0
 numpy==1.23.5
 # tensorflow-gpu==2.9.2 # for GPU
 tensorflow==2.9.2
+tqdm
+matplotlib
