@@ -45,7 +45,7 @@ print('>>> Downloading glove embeddings <Wikipedia 2014 + Gigaword 5>...')
 if not (os.path.exists(ROOT / 'data' / 'glove') and os.listdir(ROOT / 'data' / 'glove')):
     if not os.path.exists(ROOT / 'data' / 'glove'):
         os.mkdir(ROOT / 'data' / 'glove')
-    wget.download(GLOVE_URL, out = ROOT / 'data' / 'glove')
+    wget.download(GLOVE_URL, out = 'data/glove')
 
     with zipfile.ZipFile(ROOT / 'data' / 'glove' / 'glove.6B.zip', 'r') as zip_ref:
         zip_ref.extractall(ROOT / 'data' / 'glove')
