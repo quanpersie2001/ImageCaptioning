@@ -36,3 +36,7 @@ You can download pre-train model an copy them to `ROOT / weights`
 ```console
 python predict.py --image path/to/image --weight path/to/weight --k-beam 9
 ```
+
+## Result
+![image](output.png)
+You can see sumary in [summary.ipynb](summary.ipynb)
