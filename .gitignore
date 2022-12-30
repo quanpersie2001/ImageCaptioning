@@ -6,5 +6,7 @@ __pycache__/
 data/annotations/
 data/train2014/
 data/glove/
+# data/test/
 process_data/
 weights/
+yolov4/weights

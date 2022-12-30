@@ -4,3 +4,4 @@ numpy==1.23.5
 tensorflow==2.9.2
 tqdm
 matplotlib
+yolov4

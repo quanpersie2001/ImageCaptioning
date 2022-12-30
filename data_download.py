@@ -53,3 +53,11 @@ if not (os.path.exists(ROOT / 'data' / 'glove') and os.listdir(ROOT / 'data' / '
     os.remove(ROOT / 'data' / 'glove' / 'glove.6B.zip')
 else:
     print('Glove embeddings already downloaded')
+
+
+# Download cfg and weights of yolov4
+print('>>> Downloading cfg and weights of yolov4...')
+if not (os.path.exists(ROOT / 'yolov4') and os.listdir(ROOT / 'yolov4')):
+    if not os.path.exists(ROOT / 'yolov4'):
+        os.mkdir(ROOT / 'yolov4' / 'weights')
+    wget.download('https://docs.google.com/uc?export=download&id=1GJwGiR7rizY_19c_czuLN8p31BwkhWY5', out = 'yolov4/weights')

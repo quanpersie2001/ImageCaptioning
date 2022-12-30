@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from yolov4.tf import YOLOv4
 
 from keras.layers import RepeatVector
 from keras.models import Model
@@ -46,8 +47,9 @@ class InceptionNet_LSTM():
         embed_layer.set_weights([embedding_matrix])
         return embed_layer
 
-    def build_model(self, max_length, feature_size = 2048, units= 512):
-        
+
+    def build_model(self, max_length, feature_size = 2048, units= 512, mode='single'):
+        feature_size = 2048 if mode == 'single' else 2048*2
         features = Input(shape=(feature_size,))
         X_fe_one_dim = Dense(units, activation='relu')(features) 
         X_fe = RepeatVector(max_length)(X_fe_one_dim)
@@ -75,3 +77,19 @@ def inception_model():
     inception = InceptionV3()
     model = Model(inputs=inception.inputs, outputs=inception.layers[-2].output)
     return model
+
+"""
+Here we use the YOLOv4 tiny model
+You can change yolov4 model with download other weights and cfg file
+https://wiki.loliot.net/docs/lang/python/libraries/yolov4/python-yolov4-about/
+"""
+def yolo4_model(model='tiny'):
+    yolo = YOLOv4()
+
+    yolo.config.parse_names("yolov4/config/coco.names")
+    yolo.config.parse_cfg(f"yolov4/config/yolov4-{model}.cfg")
+
+    yolo.make_model()
+    yolo.load_weights(f"yolov4/weights/yolov4-{model}.weights", weights_type="yolo")
+
+    return yolo

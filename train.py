@@ -18,7 +18,7 @@ FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]
 
 
-def run(batch_size = 64, output = ROOT / 'weights', epochs = 100, save_history = True):
+def run(batch_size = 64, output = ROOT / 'weights', epochs = 100, save_history = True, mode='single'):
     if not os.path.exists(output):
         os.makedirs(output)
 
@@ -28,6 +28,8 @@ def run(batch_size = 64, output = ROOT / 'weights', epochs = 100, save_history =
     if not isinstance(epochs, int):
         raise ValueError('epochs must be an integer')
     
+    if mode not in ['single', 'dual']:
+        raise ValueError('mode must be either `single` or `dual`')
 
     history={'loss':[], 'BLEU_val':[]}
     try:
@@ -53,30 +55,35 @@ def run(batch_size = 64, output = ROOT / 'weights', epochs = 100, save_history =
     train_data, test_data = train_test_split(image_captoin_mapping_with_token)
 
     print('>>> Get features...')
+    if mode == 'single':
+        print('>>> Single mode selected')
+        ex = ''
+    else:
+        print('>>> Dual mode selected')
+        ex = '_combine'
     try:
-        with open('process_data/train_features.pkl','rb') as f:
+        with open(f'process_data/train{ex}_features.pkl','rb') as f:
             train_features= pickle.load(f)
-    except Exception as err:
-        train_features = extract_features(train_data)
-        pickle.dump(train_features, open('process_data/train_features.pkl', 'wb'))
+    except FileNotFoundError as err:
+        print('Please run `preprocess.py` first')
 
     try:
-        with open('process_data/test_features.pkl','rb') as f:
+        with open(f'process_data/test{ex}_features.pkl','rb') as f:
             test_features= pickle.load(f)
-    except Exception as err:
-        test_features = extract_features(test_data)
-        pickle.dump(test_features, open('process_data/test_features.pkl', 'wb'))
+    except FileNotFoundError as err:
+        print('Please run `preprocess.py` first')
+        
 
     mlength = get_max_length(train_data, 90)
 
     inception_lstm = InceptionNet_LSTM(vocab)
-    model = inception_lstm.build_model(max_length=mlength)
+    model = inception_lstm.build_model(max_length=mlength, mode=mode)
 
 
     class CustomSaver(keras.callbacks.Callback):
         def on_epoch_end(self, epoch, logs={}):
-            if epoch % 2 == 0:  # or save after some epoch, each k-th epoch etc.
-                self.model.save(output / f'model_{epoch}.h5')
+            if epoch % 5 == 0:  # or save after some epoch, each k-th epoch etc.
+                self.model.save(output / f'model_{epoch}_{mode}.h5')
 
     saver = CustomSaver()
     early_stopping = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=5)
@@ -90,8 +97,9 @@ def run(batch_size = 64, output = ROOT / 'weights', epochs = 100, save_history =
 
     if save_history:
         history['loss'].append(h.history['loss'])
-
-        pickle.dump(history, open('weights/history/history.pkl', 'wb'))
+        if not os.path.exists('weights/histories'):
+            os.makedirs('weights/histories')
+        pickle.dump(history, open(f'weights/histories/history_{mode}.pkl', 'wb'))
 
 
 def parse_opt():
@@ -100,13 +108,14 @@ def parse_opt():
     parser.add_argument('--output', type=str, default= ROOT / 'weights', help='weigths path(s)')
     parser.add_argument('--epochs', type=int, default=100, help='epochs')
     parser.add_argument("--save-history", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--mode", type=str, default='single', help='single or dual')
     opt = parser.parse_args()
     return opt
 
 
 def main():
     opt = parse_opt()
-    run(opt.batch_size, opt.output, opt.epochs, opt.save_history)
+    run(opt.batch_size, opt.output, opt.epochs, opt.save_history, opt.mode)
 
 
 if __name__ == '__main__':

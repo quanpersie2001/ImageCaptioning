@@ -1,12 +1,13 @@
-import pickle
 import re
+import cv2
 import json
 import keras
-from tqdm import tqdm
 import random
 import numpy as np
 import tensorflow as tf
 import keras.backend as K
+from tqdm import tqdm
+
 from keras.preprocessing import image
 from tensorflow.keras.utils import load_img
 from tensorflow.keras.utils import img_to_array
@@ -166,6 +167,28 @@ def _extract_feature(input, model, input_size = (299,299)):
     return feature
 
 
+def extract_yolo_features(data, yolo_model):
+    features = {}
+    for name in tqdm(data):
+        frame = cv2.imread(name)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        bboxes = yolo_model.predict(frame, prob_thresh=0.8)
+        bboxes = bboxes.tolist()
+        n = len(bboxes)
+        # for each bounding box, append (area * confidence)
+        for i in range(n):
+            bboxes[i].append(bboxes[i][2] * bboxes[i][3] * bboxes[i][5])
+        bboxes = np.array(bboxes)
+        features[name] = np.array(bboxes.flatten())
+    return features
+
+
+def combine_feature(feature, yolo_feature, features_shape = 2048):
+    yolo_feature = np.pad(yolo_feature, (0, features_shape - yolo_feature.shape[0]), 'constant', constant_values=(0, 0)).astype(np.float32)
+    combined_features = np.vstack((feature, yolo_feature)).astype(np.float32)
+    return combined_features.flatten()
+
+
 def get_max_length(captions, percentile):
     all_caps = []
     for i in captions:
@@ -201,7 +224,8 @@ def data_generator(captions, pictures ,tokenizer, batch_size, max_length):
                 n=0
 
 
-def k_beam_search(model, pic_fe, word_to_id, id_to_word, max_length, k_beams = 3, log = False):
+def k_beam_search(model, pic_fe, word_to_id, id_to_word, max_length, k_beams = 3, log = False, mode='single'):
+    shape = 2048 if mode == 'single' else 4096
     start = [word_to_id[START_TOKEN]]
     
     start_word = [[start, 0.0]]
@@ -210,7 +234,7 @@ def k_beam_search(model, pic_fe, word_to_id, id_to_word, max_length, k_beams = 3
         temp = []
         for s in start_word:
             sequence  = pad_sequences([s[0]], maxlen=max_length).reshape((1,max_length))
-            preds = model.predict([pic_fe.reshape(1,2048), sequence], verbose=0)
+            preds = model.predict([pic_fe.reshape(1, shape), sequence], verbose=0)
             word_preds = np.argsort(preds[0])[-k_beams:]
 
             for w in word_preds:
