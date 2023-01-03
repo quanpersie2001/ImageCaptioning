@@ -85,7 +85,7 @@ def run(path, weight='weights/model_28.h5', k_beam=5, log=False, mode='single'):
         plt.imshow(img)
 
         plt.suptitle(f'K-beam:{k_beam}', fontsize=14, fontweight=1, y=0.95, color='blue')
-        plt.title(f'{caption}', fontsize=12, fontweight=0, y=-0.1 )
+        plt.title(f'{caption[0].upper()}{caption[1:]}', fontsize=12, fontweight=0, y=-0.1 )
 
         plt.axis('off')
         plt.show()
