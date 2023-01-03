@@ -22,7 +22,7 @@ def calculate_rouge_score(actual, predict):
     return score
 
 
-def evaluate_model(model, captions, photos_fe, k_beam= 3, log=False, verbose=True):
+def evaluate_model(model, captions, photos_fe, k_beam= 3, log=False, verbose=True, mode='single'):
     """
     Calculate BLEU score of predictions
     """
@@ -38,7 +38,7 @@ def evaluate_model(model, captions, photos_fe, k_beam= 3, log=False, verbose=Tru
 
     # step over the whole set
     for key, desc_list in tqdm(captions.items()):
-        yhat=k_beam_search(model, photos_fe[key], word_to_id, id_to_word, max_length, k_beam, log)
+        yhat=k_beam_search(model, photos_fe[key], word_to_id, id_to_word, max_length, k_beam, log, mode)
         
         # store actual and predicted
         references = [d.split() for d in desc_list[:5]]
