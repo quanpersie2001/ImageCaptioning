@@ -5,3 +5,4 @@ tensorflow==2.9.2
 tqdm
 matplotlib
 yolov4
+opencv-python
