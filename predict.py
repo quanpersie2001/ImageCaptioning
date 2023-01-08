@@ -1,4 +1,3 @@
-import cv2
 import keras
 import pickle
 import argparse
@@ -7,57 +6,47 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 from tensorflow.keras.utils import load_img
-from model import inception_model, yolo4_model
+from constants import PRE_TRAINED_WEIGHTS_URL
 from tensorflow.keras.utils import img_to_array
+from models import inception_model, ssd_300_model
 from keras.applications.inception_v3 import preprocess_input
 
-from utils import combine_feature, k_beam_search
+from utils import _extract_inception_feature_one_image, _extract_ssd_feature_one_image, combine_feature, k_beam_search
 
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]
 
-def predict(path, weight='weights/model.h5', k_beam=9, log=False, mode='single'):
+def predict(path, weight=None, k_beam=9, log=False, mode='single'):
     """
     path: path to image
     weight: path to weight file
     k_beam: k for k-beam search
     log: print log or not
-    mode: single (just use inceptionNet) or dual (use inceptionNet and YOLO) to extract feature
+    mode: single (just use inceptionNet) or dual (use inceptionNet and SSD 300) to extract feature
     """
 
     if not Path(weight).exists():
-        print('Cannot find weight file, please run train.py or download pretrain model from https://drive.google.com/drive/u/2/folders/1q-COeg-nEMOnJIAfuJcKvcJl7sPQfLOn')
+        print(f'Cannot find weight file, please run train.py or download pretrain model from {PRE_TRAINED_WEIGHTS_URL}')
         return
 
     if mode not in ['single', 'dual']:
         raise ValueError('mode must be `single` or `dual`')
+    
+    if not weight:
+        raise ValueError('weight must be provided')
+
+    ssd_feature = None
+    if mode == 'dual':
+        # Extract ssd feature
+        ssd300 = ssd_300_model()
+        ssd_feature = _extract_ssd_feature_one_image(path, ssd300)
+
+    # Extract inception feature
+    _inception_model = inception_model()
+    inception_feature = _extract_inception_feature_one_image(path, _inception_model)
 
     model = keras.models.load_model(weight, compile=False)
-
-    pic = load_img(path, target_size=(299,299))
-    image = img_to_array(pic)
-    image = image.reshape((1, image.shape[0], image.shape[1], image.shape[2]))
-    image = preprocess_input(image)
-
-    extrator = inception_model()
-    feature = extrator.predict(image, verbose=0)
-
-    yolo_feature = None
-    if mode == 'dual':
-        yolo_model = yolo4_model()
-        # frame = cv2.imread(path)
-        frame = cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        bboxes = yolo_model.predict(frame, prob_thresh=0.8)
-        bboxes = bboxes.tolist()
-        n = len(bboxes)
-        # for each bounding box, append (area * confidence)
-        for i in range(n):
-            bboxes[i].append(bboxes[i][2] * bboxes[i][3] * bboxes[i][5])
-        bboxes = np.array(bboxes)
-
-        yolo_feature = np.array(bboxes.flatten())
         
     try:
         with open('process_data/word_to_id.pkl','rb') as f:
@@ -68,17 +57,19 @@ def predict(path, weight='weights/model.h5', k_beam=9, log=False, mode='single')
             max_length = pickle.load(f)
     except FileNotFoundError:
         print('Please run preprocess.py first')
-    if yolo_feature is not None:
-        fe = combine_feature(feature, yolo_feature)
+
+    if ssd_feature is not None:
+        # Combine inception feature and ssd feature
+        fe = combine_feature(inception_feature, ssd_feature)
     else:
-        fe = feature.reshape((1,2048))
+        fe = inception_feature.reshape((1,2048))
     
     caption = k_beam_search(model, fe, word_to_id, id_to_word, max_length, k_beam, log, mode)
 
     return caption
 
 
-def run(path, weight='weights/model_28.h5', k_beam=5, log=False, mode='single'):
+def run(path, weight=None, k_beam=5, log=False, mode='single'):
     caption = predict(path, weight, k_beam, log, mode)
     if caption:
         img = plt.imread(path)

@@ -4,9 +4,9 @@ import json
 import keras
 import random
 import numpy as np
+from tqdm import tqdm
 import tensorflow as tf
 import keras.backend as K
-from tqdm import tqdm
 
 from keras.preprocessing import image
 from tensorflow.keras.utils import load_img
@@ -145,47 +145,73 @@ def masked_loss_function(real, pred):
     return tf.reduce_mean(loss_)
 
 
-def extract_features(data, model, input_size = (299,299)):
+def extract_inception_features_images(data, model, input_size = (299,299)):
     features = {}
-    for name in tqdm(data):
-        image = load_img(name, target_size=input_size)
-        image = img_to_array(image)
-        image = image.reshape((1, image.shape[0], image.shape[1], image.shape[2]))
-        image = preprocess_input(image)
-        feature = model.predict(image, verbose=0)
-        features[name] = feature.reshape(2048)
+    for path in tqdm(data):
+        _feature = _extract_inception_feature_one_image(path, model, input_size)
+        features[path] = _feature
     return features
 
 
-def _extract_feature(input, model, input_size = (299,299)):
-    image = load_img(input, target_size=input_size)
+def _extract_inception_feature_one_image(path, model, input_size = (299,299)):
+    image = load_img(path, target_size=input_size)
     image = img_to_array(image)
     image = image.reshape((1, image.shape[0], image.shape[1], image.shape[2]))
     image = preprocess_input(image)
     feature = model.predict(image, verbose=0)
-    feature = feature.reshape(2048)
-    return feature
+    return feature.reshape(2048)
 
 
-def extract_yolo_features(data, yolo_model):
+def _extract_ssd_feature_one_image(path, ssd_model, confidence_threshold=0.5):
+    img = load_img(path, target_size=(300, 300))
+    img = img_to_array(img)
+    input = [img]
+    input = np.array(input)
+    bboxes = ssd_model.predict(input, verbose=0)
+
+    ssd_feature = [bboxes[k][bboxes[k,:,1] > confidence_threshold] for k in range(bboxes.shape[0])]
+
+    ssd_feature = [list(y) for y in ssd_feature[0]]
+    n = len(ssd_feature)
+    
+    # for each bounding box, append (area * confidence)
+    for i in range(n):
+        ssd_feature[i].append((ssd_feature[i][4] - ssd_feature[i][2]) * (ssd_feature[i][5] - ssd_feature[i][3]) * ssd_feature[i][1])
+    ssd_feature = sorted(ssd_feature, key=lambda x: x[-1], reverse=True)
+    ssd_feature = np.array(ssd_feature)
+
+    # Convert to relative attributes
+    frame = cv2.imread(path)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    image_width, image_height = frame.shape[1], frame.shape[0]
+
+    result = []
+    for ft in ssd_feature:
+        _cls, _conf, _xmin, _ymin, _xmax, _ymax, _ = ft
+
+        x_coord = (_xmin + _xmax) / 2 / image_width
+        y_coord = (_ymin + _ymax) / 2 / image_height
+        shape_width = (_xmax - _xmin) / image_width
+        shape_height = (_ymax - _ymin) / image_height
+        importance_factor = shape_width * shape_height * _conf
+
+        result.append([x_coord, y_coord, shape_width, shape_height, _cls, _conf, importance_factor])
+    result = np.array(result)
+
+    return result.flatten()
+
+
+def extract_ssd_features_images(data, ssd_model, confidence_threshold=0.5):
     features = {}
-    for name in tqdm(data):
-        frame = cv2.imread(name)
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        bboxes = yolo_model.predict(frame, prob_thresh=0.8)
-        bboxes = bboxes.tolist()
-        n = len(bboxes)
-        # for each bounding box, append (area * confidence)
-        for i in range(n):
-            bboxes[i].append(bboxes[i][2] * bboxes[i][3] * bboxes[i][5])
-        bboxes = np.array(bboxes)
-        features[name] = np.array(bboxes.flatten())
+    for path in tqdm(data):
+        ssd_feature = _extract_ssd_feature_one_image(path, ssd_model, confidence_threshold)
+        features[path] = ssd_feature
     return features
 
 
-def combine_feature(feature, yolo_feature, features_shape = 2048):
-    yolo_feature = np.pad(yolo_feature, (0, features_shape - yolo_feature.shape[0]), 'constant', constant_values=(0, 0)).astype(np.float32)
-    combined_features = np.vstack((feature, yolo_feature)).astype(np.float32)
+def combine_feature(feature, ssd_feature, features_shape = 2048):
+    ssd_feature = np.pad(ssd_feature, (0, features_shape - ssd_feature.shape[0]), 'constant', constant_values=(0, 0)).astype(np.float32)
+    combined_features = np.vstack((feature, ssd_feature)).astype(np.float32)
     return combined_features.flatten()
 
 

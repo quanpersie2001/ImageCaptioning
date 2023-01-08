@@ -9,4 +9,4 @@ data/glove/
 # data/test/
 process_data/
 weights/
-yolov4/weights
+ssd300/weights

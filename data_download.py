@@ -1,11 +1,11 @@
 import os
-import sys
 import wget
+import gdown
 import zipfile
 import tensorflow as tf
 from pathlib import Path
 
-from constants import GLOVE_URL
+from constants import GLOVE_URL, SSD300_WEIGHTS_URL_DOWNLOAD
 
 
 FILE = Path(__file__).resolve()
@@ -55,9 +55,9 @@ else:
     print('Glove embeddings already downloaded')
 
 
-# Download cfg and weights of yolov4
-print('>>> Downloading cfg and weights of yolov4...')
-if not (os.path.exists(ROOT / 'yolov4') and os.listdir(ROOT / 'yolov4')):
-    if not os.path.exists(ROOT / 'yolov4'):
-        os.mkdir(ROOT / 'yolov4' / 'weights')
-    wget.download('https://docs.google.com/uc?export=download&id=1GJwGiR7rizY_19c_czuLN8p31BwkhWY5', out = 'yolov4/weights')
+# Download cfg and weights of ssd300
+print('>>> Downloading cfg and weights of ssd300...')
+if not (os.path.exists(ROOT / 'ssd300') and os.listdir(ROOT / 'ssd300')):
+    if not os.path.exists(ROOT / 'ssd300'):
+        os.mkdir(ROOT / 'ssd300' / 'weights')
+    gdown.download(SSD300_WEIGHTS_URL_DOWNLOAD, output='ssd300/weights/weights.h5', quiet=False)
