@@ -146,6 +146,13 @@ def masked_loss_function(real, pred):
 
 
 def extract_inception_features_images(data, model, input_size = (299,299)):
+    """
+    Extracts inception features from images
+    :param data: dict {image_path: [caption1, caption2, ...]}
+    :param model: inception model
+    :param input_size: tuple default (299,299)
+    :return: dict {image_path: feature}
+    """
     features = {}
     for path in tqdm(data):
         _feature = _extract_inception_feature_one_image(path, model, input_size)
@@ -154,6 +161,13 @@ def extract_inception_features_images(data, model, input_size = (299,299)):
 
 
 def _extract_inception_feature_one_image(path, model, input_size = (299,299)):
+    """
+    Extracts inception features from one image
+    :param path: path to image
+    :param model: inception model
+    :param input_size: tuple default (299,299)
+    :return: feature
+    """
     image = load_img(path, target_size=input_size)
     image = img_to_array(image)
     image = image.reshape((1, image.shape[0], image.shape[1], image.shape[2]))
@@ -163,8 +177,25 @@ def _extract_inception_feature_one_image(path, model, input_size = (299,299)):
 
 
 def _extract_ssd_feature_one_image(path, ssd_model, confidence_threshold=0.5):
+    """
+    Extracts ssd features from one image
+    :param path: path to image
+    :param ssd_model: ssd model
+    :param confidence_threshold: float
+    :return: feature
+    """
     img = load_img(path, target_size=(300, 300))
     img = img_to_array(img)
+
+    img = cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    # Get orginal image size
+    image_width, image_height = img.shape[1], img.shape[0]
+
+    # Resize image to 300x300
+    img = cv2.resize(img, (300, 300))
+
     input = [img]
     input = np.array(input)
     bboxes = ssd_model.predict(input, verbose=0)
@@ -181,10 +212,6 @@ def _extract_ssd_feature_one_image(path, ssd_model, confidence_threshold=0.5):
     ssd_feature = np.array(ssd_feature)
 
     # Convert to relative attributes
-    frame = cv2.imread(path)
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    image_width, image_height = frame.shape[1], frame.shape[0]
-
     result = []
     for ft in ssd_feature:
         _cls, _conf, _xmin, _ymin, _xmax, _ymax, _ = ft
@@ -202,6 +229,13 @@ def _extract_ssd_feature_one_image(path, ssd_model, confidence_threshold=0.5):
 
 
 def extract_ssd_features_images(data, ssd_model, confidence_threshold=0.5):
+    """
+    Extracts ssd features from images
+    :param data: dict {image_path: [caption1, caption2, ...]}
+    :param ssd_model: ssd model
+    :param confidence_threshold: float
+    :return: dict {image_path: feature}
+    """
     features = {}
     for path in tqdm(data):
         ssd_feature = _extract_ssd_feature_one_image(path, ssd_model, confidence_threshold)
@@ -210,6 +244,14 @@ def extract_ssd_features_images(data, ssd_model, confidence_threshold=0.5):
 
 
 def combine_feature(feature, ssd_feature, features_shape = 2048):
+    """
+    Combines inception and ssd features
+    :param feature: inception feature
+    :param ssd_feature: ssd feature
+    :param features_shape: int default 2048
+    :return: combined feature
+    """
+    # Pad zeros to ssd feature to make it the same size as inception feature
     ssd_feature = np.pad(ssd_feature, (0, features_shape - ssd_feature.shape[0]), 'constant', constant_values=(0, 0)).astype(np.float32)
     combined_features = np.vstack((feature, ssd_feature)).astype(np.float32)
     return combined_features.flatten()

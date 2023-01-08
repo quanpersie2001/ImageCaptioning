@@ -6,6 +6,9 @@ from nltk.translate.bleu_score import corpus_bleu
 
 
 def calculate_rouge_score(actual, predict):
+    """
+    Calculate Rouge score
+    """
     actual_cap, pred_cap = list(), list()
     for tmp_1 in actual:
         for tmp_2 in tmp_1:

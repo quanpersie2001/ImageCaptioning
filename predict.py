@@ -38,6 +38,7 @@ def predict(path, weight=None, k_beam=9, log=False, mode='single'):
 
     ssd_feature = None
     if mode == 'dual':
+        
         # Extract ssd feature
         ssd300 = ssd_300_model()
         ssd_feature = _extract_ssd_feature_one_image(path, ssd300)
