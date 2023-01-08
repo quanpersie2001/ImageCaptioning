@@ -5,9 +5,7 @@ import numpy as np
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-from tensorflow.keras.utils import load_img
 from constants import PRE_TRAINED_WEIGHTS_URL
-from tensorflow.keras.utils import img_to_array
 from models import inception_model, ssd_300_model
 from keras.applications.inception_v3 import preprocess_input
 
@@ -38,7 +36,7 @@ def predict(path, weight=None, k_beam=9, log=False, mode='single'):
 
     ssd_feature = None
     if mode == 'dual':
-        
+
         # Extract ssd feature
         ssd300 = ssd_300_model()
         ssd_feature = _extract_ssd_feature_one_image(path, ssd300)
