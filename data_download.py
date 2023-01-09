@@ -57,7 +57,6 @@ else:
 
 # Download cfg and weights of ssd300
 print('>>> Downloading cfg and weights of ssd300...')
-if not (os.path.exists(ROOT / 'ssd300') and os.listdir(ROOT / 'ssd300')):
-    if not os.path.exists(ROOT / 'ssd300'):
-        os.mkdir(ROOT / 'ssd300' / 'weights')
+if not os.path.exists(ROOT / 'ssd300' / 'weights'):
+    os.mkdir(ROOT / 'ssd300' / 'weights')
     gdown.download(SSD300_WEIGHTS_URL_DOWNLOAD, output='ssd300/weights/weights.h5', quiet=False)
