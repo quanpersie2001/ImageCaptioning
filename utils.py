@@ -184,9 +184,6 @@ def _extract_ssd_feature_one_image(path, ssd_model, confidence_threshold=0.5):
     :param confidence_threshold: float
     :return: feature
     """
-    img = load_img(path, target_size=(300, 300))
-    img = img_to_array(img)
-
     img = cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
