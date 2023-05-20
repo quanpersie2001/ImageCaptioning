@@ -81,7 +81,7 @@ def run(batch_size = 64, output = ROOT / 'weights', epochs = 100, save_history =
 
     class CustomSaver(keras.callbacks.Callback):
         def on_epoch_end(self, epoch, logs={}):
-            if epoch % 10 == 0:  # or save after some epoch, each k-th epoch etc.
+            if epoch % 5 == 0:  # or save after some epoch, each k-th epoch etc.
                 self.model.save(output / f'model_{epoch}_{mode}.h5')
 
     saver = CustomSaver()
