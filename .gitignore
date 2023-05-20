@@ -6,7 +6,7 @@ __pycache__/
 data/annotations/
 data/train2014/
 data/glove/
-# data/test/
+data/test/
 process_data/
 weights/
 ssd300/weights
